@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package ru.spb.kry127.netbench.proto;
+
+// сообщения по идентификации клиента или его сессии не нужно,
+// поскольку сервер (на крайний случай) может идентифицировать клиента
+// по паре ip + port
+
+message SortArray {
+  repeated int32 array = 12;
+}
+
+message SortArrayRsp {
+  int64 requestProcessingTime = 1; // время обработки запроса (время от старта сортировки до окончания сортировки)
+  int64 clientProcessingTime = 2; // время обработки клиента (время от приёма сообщения от клиента до ответа клиенту)
+  repeated int32 sortedArray = 12;
+}

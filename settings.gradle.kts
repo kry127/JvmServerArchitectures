@@ -7,5 +7,6 @@
  * in the user manual at https://docs.gradle.org/6.6.1/userguide/multi_project_builds.html
  */
 
+
 rootProject.name = "JvmServerArchitectures"
-include("protoMessages")
+include("protoMessages", "server")

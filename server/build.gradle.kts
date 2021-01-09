@@ -8,6 +8,8 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven("https://repository.apache.org/content/repositories/snapshots")
+
 }
 val protobufVersion = "3.14.0"
 
@@ -24,6 +26,7 @@ dependencies {
     // Use the Kotlin JUnit integration.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 
+    implementation("commons-cli:commons-cli:1.5-SNAPSHOT")
     implementation("com.google.protobuf:protobuf-java:$protobufVersion")
     implementation(project(":protoMessages"))
 

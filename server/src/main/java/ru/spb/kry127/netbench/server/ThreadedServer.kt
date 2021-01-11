@@ -1,6 +1,7 @@
 package ru.spb.kry127.netbench.server
 
 import ru.spb.kry127.netbench.proto.ArraySorter
+import java.math.BigInteger
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.ExecutorService
@@ -37,6 +38,14 @@ class ThreadedServer(private val port : Int, private val workersCount : Int) : S
         val inputStream = clientSocket.getInputStream()
         val outputStream = clientSocket.getOutputStream()
         while (true) {
+            // receive size of the message
+
+            val byteArray = inputStream.readNBytes(4)
+            if (byteArray.size != 4) {
+                error("Client sent invalid message size")
+            }
+            val msgSize = BigInteger(byteArray).toInt() // actually, not used in threaded version of server
+
             // receive task for array sorting from client
             // https://developers.google.com/protocol-buffers/docs/reference/java/com/google/protobuf/Parser.html#parseDelimitedFrom-java.io.InputStream-
             val reqMessage = ArraySorter.SortArray.parseDelimitedFrom(inputStream)

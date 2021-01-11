@@ -30,7 +30,7 @@ fun main(args : Array<String>) {
         "specify architecture of server [$availableArchitecturesAsString]")
     buildOption("p", port, true, true,
         "specify port for server deployment")
-    buildOption("w", port, true, false,
+    buildOption("w", workers, true, false,
         "specify number of working threads to process sorting")
 
     val parser: CommandLineParser = DefaultParser()

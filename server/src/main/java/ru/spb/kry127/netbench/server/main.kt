@@ -1,9 +1,16 @@
 package ru.spb.kry127.netbench.server
 
 import org.apache.commons.cli.*
+import ru.spb.kry127.netbench.server.PropLoader.availableArchitecturesAsString
+import ru.spb.kry127.netbench.server.PropLoader.availableArchitectures
 
-fun chooseServerArch(archDescription : String, port : Int, workers : Int) : Server {
-    TODO("Implement dependency injection")
+fun chooseServerArch(arch : String, port : Int, workers : Int) : Server {
+    return when (arch) {
+        availableArchitectures[0] -> ThreadedServer(port, workers)
+        availableArchitectures[1] -> NonblockingServer(port, workers)
+        availableArchitectures[2] -> AsynchronousServer(port, workers)
+        else -> error("Not available architecture for implementation: $arch")
+    }
 }
 
 fun main(args : Array<String>) {
@@ -19,9 +26,12 @@ fun main(args : Array<String>) {
     val port = "port"
     val workers = "workers"
 
-    buildOption("a", arch, true, true, "specify architecture of server [thread|nonblock|async]")
-    buildOption("p", port, true, true, "specify port for torrent client")
-    buildOption("w", port, true, false, "specify number of working threads to process sorting")
+    buildOption("a", arch, true, false,
+        "specify architecture of server [$availableArchitecturesAsString]")
+    buildOption("p", port, true, true,
+        "specify port for server deployment")
+    buildOption("w", port, true, false,
+        "specify number of working threads to process sorting")
 
     val parser: CommandLineParser = DefaultParser()
     val cmd: CommandLine
@@ -29,7 +39,12 @@ fun main(args : Array<String>) {
     try {
         cmd = parser.parse(options, args)
 
-        val architecture = cmd.getOptionValue(arch)
+        val architecture = cmd.getOptionValue(arch) ?: availableArchitectures.first()
+        if (!(architecture in availableArchitectures)) {
+            System.err.println("Specified architecture $architecture is not presented in the list.")
+            System.err.println("Available architectures: [$availableArchitecturesAsString]")
+            System.exit(3)
+        }
         val serverPort = cmd.getOptionValue(port).toInt()
         val workersCount = cmd.getOptionValue(workers)?.toInt() ?: PropLoader.defaultWorkersCount
         val server = chooseServerArch(architecture, serverPort, workersCount)

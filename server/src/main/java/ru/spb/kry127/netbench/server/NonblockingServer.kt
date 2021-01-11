@@ -5,21 +5,19 @@ import ru.spb.kry127.netbench.proto.ArraySorter
 import java.lang.Thread.sleep
 import java.math.BigInteger
 import java.net.InetSocketAddress
-import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
 import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.concurrent.thread
 import kotlin.system.measureTimeMillis
 
-class NonblockingServer(private val port: Int, private val workersCount: Int) : Server {
+class NonblockingServer(private val port: Int, workersCount: Int) : Server {
 
     // thread pool for sorting arrays
     private val sortingThreadPool = Executors.newFixedThreadPool(workersCount)
@@ -35,8 +33,8 @@ class NonblockingServer(private val port: Int, private val workersCount: Int) : 
     private val writeSelector = Selector.open() // open new selector for writing to clients
 
     // declare threads for processing readSelector and writeSelector
-    private lateinit var readingThreadSelector : Thread
-    private lateinit var writingThreadSelector : Thread
+    private var readingThreadSelector : Thread
+    private var writingThreadSelector : Thread
 
     init {
         // separate thread for reading selector
@@ -59,7 +57,6 @@ class NonblockingServer(private val port: Int, private val workersCount: Int) : 
                             val clientId = key.attachment() as Long // get clientId from attachment
                             val clientBundle = clientStates[clientId] ?: error("Illegal client state")
                             val channel = key.channel() as SocketChannel // get channel
-                            // TODO read some data
                             when (clientBundle.state) {
                                 ClientState.READY -> {
                                     val code = channel.read(clientBundle.sizeBuf)
@@ -124,7 +121,6 @@ class NonblockingServer(private val port: Int, private val workersCount: Int) : 
                             val clientId = key.attachment() as Long
                             val clientBundle = clientStates[clientId] ?: error("Illegal client state")
                             val channel = key.channel() as SocketChannel // get channel
-                            // TODO write some data
                             when (clientBundle.state) {
                                 ClientState.SENDING -> {
                                     channel.write(clientBundle.msgBuf)
@@ -220,8 +216,7 @@ class NonblockingServer(private val port: Int, private val workersCount: Int) : 
 
             // set message to write to client
             clientBundle.state = ClientState.SENDING
-            clientBundle.msgBuf = ByteBuffer.wrap(rspMessage.toByteArray())
-            clientBundle.msgBuf.flip() // flip buffer for writing it
+            clientBundle.msgBuf = ByteBuffer.wrap(rspMessage.toByteArray()) // no need to flip: https://www.mindprod.com/jgloss/bytebuffer.html#SAMPLECODE
             // register write selector
             registerSelector(
                 writeSelector,

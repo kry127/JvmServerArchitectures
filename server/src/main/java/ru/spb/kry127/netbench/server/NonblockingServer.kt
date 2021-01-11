@@ -26,7 +26,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
     private val uniqueIdGen = AtomicLong()
 
     // hashmap of id to client state
-    private val clientStates = ConcurrentHashMap<Long, ClientBundle>()
+    private val clientBundles = ConcurrentHashMap<Long, ClientBundle>()
 
     // create selectors
     private val readSelector = Selector.open() // open new selector for reading from clients
@@ -55,7 +55,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
 
                         if (key.isReadable) {
                             val clientId = key.attachment() as Long // get clientId from attachment
-                            val clientBundle = clientStates[clientId] ?: error("Illegal client state")
+                            val clientBundle = clientBundles[clientId] ?: error("Illegal client state")
                             val channel = key.channel() as SocketChannel // get channel
                             when (clientBundle.state) {
                                 ClientState.READY -> {
@@ -63,6 +63,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                     if (code == -1) {
                                         // the communication is over
                                         key.cancel()
+                                        clientBundles.remove(clientId)
                                     }
                                     if (!clientBundle.sizeBuf.hasRemaining()) {
                                         val size = BigInteger(clientBundle.sizeBuf.array()).toInt()
@@ -119,7 +120,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
 
                         if (key.isWritable) {
                             val clientId = key.attachment() as Long
-                            val clientBundle = clientStates[clientId] ?: error("Illegal client state")
+                            val clientBundle = clientBundles[clientId] ?: error("Illegal client state")
                             val channel = key.channel() as SocketChannel // get channel
                             when (clientBundle.state) {
                                 ClientState.SENDING -> {
@@ -180,7 +181,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
             clientSocket.configureBlocking(false) // set client in nonblocking mode
 
             // create client's state
-            clientStates[clientId] = ClientBundle(clientSocket, ClientState.READY)
+            clientBundles[clientId] = ClientBundle(clientSocket, ClientState.READY)
 
             // register selector for read
             registerSelector(readSelector, readingThreadSelector, clientSocket, SelectionKey.OP_READ, clientId)
@@ -189,7 +190,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
 
     private fun processTask(clientId : Long, task : ArraySorter.SortArray) {
 
-        val clientBundle = clientStates[clientId] ?: error("Illegal client state")
+        val clientBundle = clientBundles[clientId] ?: error("Illegal client state")
         clientBundle.state = ClientState.PROCESSING
 
         // register time of starting processing the client -- starts when task has been received from client (here)

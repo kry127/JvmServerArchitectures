@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import kotlin.system.measureTimeMillis
 
-class ThreadedServer(private val port : Int, private val workersCount : Int) : Server {
+class ThreadedServer(private val port : Int, workersCount : Int) : Server {
 
     // thread pool for sorting arrays
     val sortingThreadPool = Executors.newFixedThreadPool(workersCount)
@@ -44,7 +44,7 @@ class ThreadedServer(private val port : Int, private val workersCount : Int) : S
             if (byteArray.size != 4) {
                 error("Client sent invalid message size")
             }
-            val msgSize = BigInteger(byteArray).toInt() // actually, not used in threaded version of server
+            BigInteger(byteArray).toInt() // actually, return parameter (size of msg) is not used in threaded version of server
 
             // receive task for array sorting from client
             // https://developers.google.com/protocol-buffers/docs/reference/java/com/google/protobuf/Parser.html#parseDelimitedFrom-java.io.InputStream-

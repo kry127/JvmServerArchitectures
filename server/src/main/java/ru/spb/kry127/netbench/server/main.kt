@@ -2,7 +2,7 @@ package ru.spb.kry127.netbench.server
 
 import org.apache.commons.cli.*
 
-fun chooseServerArch(archDescription : String, port : Int) : Server {
+fun chooseServerArch(archDescription : String, port : Int, workers : Int) : Server {
     TODO("Implement dependency injection")
 }
 
@@ -17,9 +17,11 @@ fun main(args : Array<String>) {
 
     val arch = "arch"
     val port = "port"
+    val workers = "workers"
 
     buildOption("a", arch, true, true, "specify architecture of server [thread|nonblock|async]")
     buildOption("p", port, true, true, "specify port for torrent client")
+    buildOption("w", port, true, false, "specify number of working threads to process sorting")
 
     val parser: CommandLineParser = DefaultParser()
     val cmd: CommandLine
@@ -29,7 +31,8 @@ fun main(args : Array<String>) {
 
         val architecture = cmd.getOptionValue(arch)
         val serverPort = cmd.getOptionValue(port).toInt()
-        val server = chooseServerArch(architecture, serverPort)
+        val workersCount = cmd.getOptionValue(workers)?.toInt() ?: PropLoader.defaultWorkersCount
+        val server = chooseServerArch(architecture, serverPort, workersCount)
 
         server.use {
             it.start() // start the work of the chosen server

@@ -9,4 +9,4 @@
 
 
 rootProject.name = "JvmServerArchitectures"
-include("protoMessages", "server")
+include("protoMessages", "server", "client")

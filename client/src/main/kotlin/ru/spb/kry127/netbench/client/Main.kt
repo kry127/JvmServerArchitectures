@@ -4,5 +4,5 @@ import javafx.application.Application
 
 fun main(args : Array<String>) {
     // just start window as main application
-    Application.launch(FXMLExample::class.java, *args)
+    Application.launch(StartupParametersApp::class.java, *args)
 }

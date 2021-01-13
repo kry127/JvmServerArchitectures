@@ -9,11 +9,11 @@ import javafx.scene.Parent
 import javafx.stage.Stage
 
 
-class FXMLExample : Application() {
+class StartupParametersApp : Application() {
     override fun start(stage: Stage) {
-        val root = FXMLLoader.load<Parent>(javaClass.getResource("Sample.fxml"))
-        val scene = Scene(root, 300.0, 275.0)
-        stage.setTitle("FXML Welcome")
+        val root = FXMLLoader.load<Parent>(javaClass.getResource("startup_parameters.fxml"))
+        val scene = Scene(root, 600.0, 400.0)
+        stage.setTitle("NetBench utility")
         stage.setScene(scene)
         stage.show()
     }

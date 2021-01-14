@@ -83,10 +83,20 @@ class AsynchronousServer(private val port : Int, workersCount : Int) : Server {
                             .setClientProcessingTime(endOfTheProcessing - startOfTheProcessing)
                             .build()
 
+                        // build merged message
+                        val rspBuf = rspMessage.toByteArray()
+
+                        // make buffer with size of passing message
+                        val szBuf = ByteBuffer.allocate(4).putInt(rspBuf.size)
+
+                        // concat to single buffer
+                        val mergeBuffer = ByteBuffer.allocate(szBuf.limit() + rspBuf.size)
+                        mergeBuffer.put(szBuf)
+                        mergeBuffer.put(rspBuf)
 
                         // set message to write to client
                         clientBundle.state = ClientState.SENDING
-                        clientBundle.msgBuf = ByteBuffer.wrap(rspMessage.toByteArray()) // no need to flip
+                        clientBundle.msgBuf = mergeBuffer
                         clientBundle.clientSocket.write(clientBundle.msgBuf, id, this)
                     }
                 }

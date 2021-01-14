@@ -4,6 +4,7 @@ import ru.spb.kry127.netbench.proto.ArraySorter
 import java.math.BigInteger
 import java.net.ServerSocket
 import java.net.Socket
+import java.nio.ByteBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -72,8 +73,10 @@ class ThreadedServer(private val port : Int, workersCount : Int) : Server {
                     // assume here we end client processing (that's not pure truth)
                     val endOfTheProcessing = System.currentTimeMillis()
                     // embed metrics, build message and send it to client
-                    rspMessageBuilder.setClientProcessingTime(endOfTheProcessing - startOfTheProcessing)
-                        .build().writeDelimitedTo(outputStream)
+                    val protoMsg = rspMessageBuilder.setClientProcessingTime(endOfTheProcessing - startOfTheProcessing)
+                        .build()
+                    outputStream.write(ByteBuffer.allocate(4).putInt(protoMsg.serializedSize).array())
+                    protoMsg.writeTo(outputStream)
                 }
             }
         }

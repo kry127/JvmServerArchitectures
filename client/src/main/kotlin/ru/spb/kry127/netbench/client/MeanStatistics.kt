@@ -1,4 +1,4 @@
-package ru.spb.kry127.netbench.client.net
+package ru.spb.kry127.netbench.client
 
 /**
  * This data class represents three points of the plot at a certain measure

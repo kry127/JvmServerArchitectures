@@ -2,15 +2,14 @@ package ru.spb.kry127.netbench.client.net
 
 import ru.spb.kry127.netbench.client.InputDataPoint
 import ru.spb.kry127.netbench.client.IntGenerator
-import ru.spb.kry127.netbench.client.net.MeanStatistics.Companion.mean
+import ru.spb.kry127.netbench.client.MeanStatistics
+import ru.spb.kry127.netbench.client.MeanStatistics.Companion.mean
 import ru.spb.kry127.netbench.proto.ArraySorter
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.CompletionHandler
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 
 /**
  * Client is something that should be able to receive InputDataPoint,

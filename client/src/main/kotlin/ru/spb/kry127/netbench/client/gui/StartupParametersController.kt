@@ -12,6 +12,7 @@ import javafx.fxml.Initializable
 import javafx.scene.control.Button
 import javafx.scene.control.RadioButton
 import javafx.scene.control.TextField
+import java.lang.NumberFormatException
 import java.net.URL
 import java.util.*
 
@@ -34,6 +35,22 @@ class StartupParametersController : Initializable {
 
     @FXML private val buttonLaunch: Button? = null
 
+    private val errorIntInputCssPseudoclass = "error-int-input"
+
+    @Throws(NumberFormatException::class)
+    private fun TextField.getInt() : Int {
+        try {
+            val ret = this.text.toInt()
+            this.styleClass.remove(errorIntInputCssPseudoclass)
+            return ret
+        } catch (nfe : NumberFormatException) {
+            if (!this.styleClass.contains(errorIntInputCssPseudoclass)) {
+                this.styleClass.add(errorIntInputCssPseudoclass)
+            }
+            throw nfe
+        }
+    }
+
     private fun enableInputs() {
         inputN?.isDisable = false
         inputM?.isDisable = false
@@ -45,6 +62,14 @@ class StartupParametersController : Initializable {
         dropdownArch?.setItems(options) // this statement adds all values in choiceBox
         dropdownArch?.setValue("Threaded") // this statement shows default value
         println("dropdownArch=$dropdownArch")
+
+        // make all input box red on invalid input
+        listOf(inputX, inputN, inputM, inputDelta, inputFrom, inputTo, inputStep).map {
+            textField ->
+            textField?.onKeyTyped = EventHandler {
+                try { textField?.getInt() } catch (nfe : NumberFormatException) { }
+            }
+        }
 
         radioN?.onAction = EventHandler {
             if (radioN?.isSelected == true) {

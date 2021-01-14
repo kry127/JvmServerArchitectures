@@ -9,7 +9,7 @@ object IntGenerator {
     /**
      * Generate array of size `size` with function `randf` that takes index of generated element
      */
-    fun generateArray(size: Int, randf : (Int) -> Int) = (1..size).map { randf(it) }
+    fun generateArray(size: Int, randf : (Int) -> Int) = (0 until size).map { randf(it) }
 
     /**
      * Generate array of size `size` with uniformly distributed elements

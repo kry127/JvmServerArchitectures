@@ -35,7 +35,8 @@ class AsynchronousServer(private val port : Int, workersCount : Int) : Server {
             val clientBundle = ClientBundle(clientSocketChannel, ClientState.READY)
             clientBundles[uniqueClientId] = clientBundle
             // launch common handler to process client. Attachment is client identity
-            clientSocketChannel.read(clientBundle.sizeBuf, uniqueClientId, completionHandler)
+//            clientSocketChannel.read(clientBundle.sizeBuf, uniqueClientId, completionHandler)
+            completionHandler.completed(0, uniqueClientId) // start handling
         }
     }
 
@@ -49,21 +50,32 @@ class AsynchronousServer(private val port : Int, workersCount : Int) : Server {
      */
     inner class ReadSizeHandler : CompletionHandler<Int?, Long?> {
         override fun completed(result: Int?, id: Long?) {
-            val clientBundle = clientBundles[id] ?: error("Corruption of user metadata")
+            val clientBundle = clientBundles[id]
+                ?: error("Corruption of user metadata: id=$id")
             if (result == -1) {
                 // the communication with client is over
+                println("Client #$id, status: COMMUNICATION_ENDED")
                 clientBundles.remove(id)
+                return
             }
+
+            println("Client #$id, status: ${clientBundle.state}")
             when (clientBundle.state) {
                 ClientState.READY -> {
-                    val size = BigInteger(clientBundle.sizeBuf.array()).toInt()
+                    clientBundle.state = ClientState.READING_SIZE
+                    clientBundle.sizeBuf.clear()
+                    clientBundle.clientSocket.read(clientBundle.sizeBuf, id, this)
+                }
+                ClientState.READING_SIZE -> {
+                    clientBundle.sizeBuf.flip()
+                    val size = clientBundle.sizeBuf.getInt()
                     clientBundle.state = ClientState.READING
                     clientBundle.msgBuf = ByteBuffer.allocate(size)
-                    clientBundle.sizeBuf.clear()
                     clientBundle.clientSocket.read(clientBundle.msgBuf, id, this)
                 }
                 ClientState.READING -> {
-                    val sortArrayTask = ArraySorter.SortArray.parseFrom(clientBundle.msgBuf)
+                    clientBundle.msgBuf.flip()
+                    val sortArrayTask = ArraySorter.SortArray.parseFrom(clientBundle.msgBuf.array())
                     clientBundle.state = ClientState.PROCESSING
                     val startOfTheProcessing = System.currentTimeMillis()
                     val arrayToSort = sortArrayTask.arrayList.toList()
@@ -86,12 +98,9 @@ class AsynchronousServer(private val port : Int, workersCount : Int) : Server {
                         // build merged message
                         val rspBuf = rspMessage.toByteArray()
 
-                        // make buffer with size of passing message
-                        val szBuf = ByteBuffer.allocate(4).putInt(rspBuf.size)
-
                         // concat to single buffer
-                        val mergeBuffer = ByteBuffer.allocate(szBuf.limit() + rspBuf.size)
-                        mergeBuffer.put(szBuf)
+                        val mergeBuffer = ByteBuffer.allocate(4 + rspBuf.size)
+                        mergeBuffer.putInt(rspBuf.size)
                         mergeBuffer.put(rspBuf)
                         mergeBuffer.flip()
 
@@ -104,7 +113,7 @@ class AsynchronousServer(private val port : Int, workersCount : Int) : Server {
                 ClientState.SENDING -> {
                     // start over again
                     clientBundle.state = ClientState.READY
-                    clientBundle.clientSocket.read(clientBundle.sizeBuf, id, this)
+                    clientBundle.clientSocket.write(clientBundle.sizeBuf, id, this)
                 }
                 else -> error("Client illegal state when handler has been completed")
             }
@@ -117,7 +126,7 @@ class AsynchronousServer(private val port : Int, workersCount : Int) : Server {
     }
 
 
-    private enum class ClientState { READY, READING, PROCESSING, SENDING }
+    private enum class ClientState { READY, READING_SIZE, READING, PROCESSING, SENDING }
     private class ClientBundle(
         val clientSocket: AsynchronousSocketChannel,
         var state: ClientState,

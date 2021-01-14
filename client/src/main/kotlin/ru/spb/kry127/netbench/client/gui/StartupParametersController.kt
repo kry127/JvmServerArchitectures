@@ -95,7 +95,9 @@ class StartupParametersController: Initializable {
         }
     }
 
+    var process : Process? = null
     private fun launchServerArchitecture() : InetSocketAddress? {
+        process = null
         val arch = dropdownArch?.value
         val id = dropdownArchOptions.indexOf(arch)
         if (id == -1) return null
@@ -103,7 +105,7 @@ class StartupParametersController: Initializable {
         val argvKeys = dropdownArchArgvKeys[id]
 
         val address = InetSocketAddress(argvKeys.portKey)
-        if (PropLoader.debug) {
+        if (PropLoader.doNotSpawnOwnServer) {
             return address // for debug purposes
         }
 
@@ -115,10 +117,10 @@ class StartupParametersController: Initializable {
             "--port", argvKeys.portKey.toString(),
             "--workers", argvKeys.workersKey.toString(),
         )
-        val process = processPrep.start()
+        process = processPrep.start()
 
         var retries = 0
-        while (process.isAlive) {
+        while (process?.isAlive == true) {
             try {
                 if (retries > 0) {
                     Thread.sleep(connectionRetryDelayMs)
@@ -200,7 +202,12 @@ class StartupParametersController: Initializable {
                 val measure = measureStatistics(parameters) {
                     ClientAsyncImpl(connectTo)
                 }
-                print("measure: $measure")
+                println("measure: $measure")
+            }
+
+            // do not forget to destroy server process
+            if (process?.isAlive == true) {
+                process?.destroy()
             }
         }
     }

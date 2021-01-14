@@ -121,6 +121,8 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
                     if (attachment.timeToLive <= 0) {
                         // That's all, lets provide the result!
                         attachment.completableFuture.complete(attachment.resultList.mean())
+                        // and also close connection
+                        attachment.channel.close()
                     } else {
                         // That's not all, start over again! But with delay of delta
                         waitUntil(System.currentTimeMillis() + attachment.inputDataPoint.delta)

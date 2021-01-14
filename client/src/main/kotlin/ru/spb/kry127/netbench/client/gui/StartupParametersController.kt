@@ -258,6 +258,7 @@ class StartupParametersController: Initializable {
             val controller = fxmlLoader.getController<ResultController>()
 
             val stage = buttonLaunch?.scene?.window as Stage
+            val oldScene = stage.scene
             val scene = Scene(root)
             stage.scene = scene
             stage.hide()
@@ -273,6 +274,14 @@ class StartupParametersController: Initializable {
                         process.toHandle().destroy()
                     }
                 }
+            }
+            stage.onCloseRequest = EventHandler {
+                stage.hide()
+                stage.onShown = null
+                stage.onCloseRequest = null
+                stage.scene = oldScene
+                stage.show()
+                it.consume()
             }
             stage.show()
 

@@ -136,13 +136,24 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
                         // That's all, lets provide the result!
                         attachment.completableFuture.complete(attachment.resultList.mean())
                     } else {
-                        // That's not all, start over again!
+                        // That's not all, start over again! But with delay of delta
+                        waitUntil(System.currentTimeMillis() + attachment.inputDataPoint.delta)
                         attachment.state = ClientState.START_SENDING
                         AsyncHandlerLong.completed(0, attachment)
                     }
 
                 }
                 else -> error("Wrong state at Int handler")
+            }
+        }
+
+        private fun waitUntil(l: Long) {
+            while(true) {
+                val sleepFor = l - System.currentTimeMillis()
+                if (sleepFor <= 0) break;
+                try {
+                    Thread.sleep(sleepFor)
+                } catch (ex : InterruptedException) { }
             }
         }
 

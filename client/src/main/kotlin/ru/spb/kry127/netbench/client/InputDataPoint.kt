@@ -20,6 +20,6 @@ data class InputDataPoint(
     /**
      * Delay between requests of sorting the array
      */
-    val delta : Int
+    val delta : Long
 ) {
 }

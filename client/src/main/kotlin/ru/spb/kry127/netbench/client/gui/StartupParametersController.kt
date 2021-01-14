@@ -1,4 +1,4 @@
-package ru.spb.kry127.netbench.client
+package ru.spb.kry127.netbench.client.gui
 
 import javafx.event.ActionEvent
 import javafx.fxml.FXML;

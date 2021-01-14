@@ -1,4 +1,4 @@
-package ru.spb.kry127.netbench.client
+package ru.spb.kry127.netbench.client.gui
 
 import javafx.application.Application
 import javafx.scene.Scene

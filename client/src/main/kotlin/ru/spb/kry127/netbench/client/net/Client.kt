@@ -40,7 +40,7 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
             object : CompletionHandler<Void, AsynchronousSocketChannel> {
                 override fun completed(result: Void?, channel: AsynchronousSocketChannel) {
                     // A little bit artificial, but it should work
-                    AsyncHandlerLong.completed(
+                    AsyncHandler.completed(
                         0,
                         AsyncHandlerAttachment(
                             channel, completableFuture, withParameters,
@@ -67,7 +67,7 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
         val inputDataPoint: InputDataPoint,
         var timeToLive: Int,
 
-        var state: ClientState = ClientState.SENDING,
+        var state: ClientState = ClientState.START_SENDING,
         var buf: ByteBuffer = ByteBuffer.allocate(0),
         var msgSize: Int = 0,
         var startProcessingTime: Long = 0,
@@ -75,52 +75,37 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
 
         )
 
-    object AsyncHandlerLong : CompletionHandler<Long, AsyncHandlerAttachment> {
-        override fun completed(result: Long, attachment: AsyncHandlerAttachment) {
+    object AsyncHandler : CompletionHandler<Int, AsyncHandlerAttachment> {
+        override fun completed(result: Int, attachment: AsyncHandlerAttachment) {
             when (attachment.state) {
                 ClientState.START_SENDING -> {
                     attachment.startProcessingTime = System.currentTimeMillis()
                     // we'd like to send some array
                     val toSort = IntGenerator.generateUniformArray(attachment.inputDataPoint.n)
                     val msgBytes = ArraySorter.SortArray.newBuilder().addAllArray(toSort).build().toByteArray()
-                    val msgHeader = ByteBuffer.allocate(4).putInt(msgBytes.size).array()
-                    val buffers = listOf(msgHeader, msgBytes).map { ByteBuffer.wrap(it) }.toTypedArray()
+                    val bigBuffer = ByteBuffer.allocate(4 + msgBytes.size)
+                    bigBuffer.putInt(msgBytes.size)
+                    bigBuffer.put(msgBytes)
+                    bigBuffer.flip()
 
                     attachment.state = ClientState.SENDING
                     attachment.channel.write(
-                        buffers,
-                        0,
-                        buffers.size,
-                        20L,
-                        TimeUnit.SECONDS,
+                        bigBuffer,
                         attachment,
-                        AsyncHandlerLong
+                        AsyncHandler
                     )
                 }
                 ClientState.SENDING -> {
                     attachment.state = ClientState.RECEIVING_SIZE
                     attachment.buf = ByteBuffer.allocate(4)
-                    attachment.channel.read(attachment.buf, attachment, AsyncHandlerInt)
+                    attachment.channel.read(attachment.buf, attachment, AsyncHandler)
                 }
-                else -> error("Wrong state at Long handler")
-            }
-        }
-
-        override fun failed(exc: Throwable, attachment: AsyncHandlerAttachment) {
-            attachment.completableFuture.completeExceptionally(exc)
-        }
-
-    }
-
-    object AsyncHandlerInt : CompletionHandler<Int, AsyncHandlerAttachment> {
-        override fun completed(result: Int, attachment: AsyncHandlerAttachment) {
-            when (attachment.state) {
                 ClientState.RECEIVING_SIZE -> {
                     val sz = attachment.buf.getInt()
                     attachment.msgSize = sz
                     attachment.buf = ByteBuffer.allocate(sz)
                     attachment.state = ClientState.RECEIVING_MSG
-                    attachment.channel.read(attachment.buf, attachment, AsyncHandlerInt)
+                    attachment.channel.read(attachment.buf, attachment, AsyncHandler)
                 }
                 ClientState.RECEIVING_MSG -> {
                     val rsp = ArraySorter.SortArrayRsp.parseFrom(attachment.buf)
@@ -138,11 +123,10 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
                         // That's not all, start over again! But with delay of delta
                         waitUntil(System.currentTimeMillis() + attachment.inputDataPoint.delta)
                         attachment.state = ClientState.START_SENDING
-                        AsyncHandlerLong.completed(0, attachment)
+                        completed(0, attachment)
                     }
 
                 }
-                else -> error("Wrong state at Int handler")
             }
         }
 

@@ -45,7 +45,7 @@ class ThreadedServer(private val port : Int, workersCount : Int) : Server {
             if (byteArray.size != 4) {
                 error("Client sent invalid message size")
             }
-            BigInteger(byteArray).toInt() // actually, return parameter (size of msg) is not used in threaded version of server
+            val inputSize = ByteBuffer.wrap(byteArray).getInt() // actually, return parameter (size of msg) is not used in threaded version of server
 
             // receive task for array sorting from client
             // https://developers.google.com/protocol-buffers/docs/reference/java/com/google/protobuf/Parser.html#parseDelimitedFrom-java.io.InputStream-

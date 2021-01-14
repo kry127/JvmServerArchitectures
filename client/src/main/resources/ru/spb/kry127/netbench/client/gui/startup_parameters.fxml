@@ -11,6 +11,7 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
@@ -69,7 +70,7 @@
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
                   </Label>
-                  <TextField fx:id="inputX" promptText="20" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                  <TextField fx:id="inputX" promptText="Enter natural number..." GridPane.columnIndex="1" GridPane.rowIndex="1">
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
@@ -79,7 +80,7 @@
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
                   </Label>
-                  <TextField fx:id="inputN" disable="true" promptText="45" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                  <TextField fx:id="inputN" disable="true" promptText="Enter natural number..." GridPane.columnIndex="1" GridPane.rowIndex="2">
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
@@ -97,7 +98,7 @@
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
                   </Label>
-                  <TextField fx:id="inputM" promptText="7" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                  <TextField fx:id="inputM" promptText="Enter natural number..." GridPane.columnIndex="1" GridPane.rowIndex="3">
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
@@ -112,7 +113,7 @@
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
                   </Label>
-                  <TextField fx:id="inputDelta" layoutX="265.0" layoutY="243.0" promptText="50" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                  <TextField fx:id="inputDelta" layoutX="265.0" layoutY="243.0" promptText="Enter delay in milliseconds..." GridPane.columnIndex="1" GridPane.rowIndex="4">
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
@@ -126,10 +127,10 @@
             </GridPane>
             <Separator prefWidth="200.0">
                <VBox.margin>
-                  <Insets top="5.0" />
+                  <Insets bottom="5.0" top="5.0" />
                </VBox.margin>
             </Separator>
-            <Label alignment="CENTER" contentDisplay="CENTER" text="Select range" textAlignment="CENTER">
+            <Label alignment="CENTER" contentDisplay="CENTER" text="Select range for varying parameter" textAlignment="CENTER">
                <font>
                   <Font name="Ubuntu" size="18.0" />
                </font>
@@ -153,7 +154,7 @@
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
                   </Label>
-                  <TextField fx:id="inputFrom" promptText="45" GridPane.rowIndex="1">
+                  <TextField fx:id="inputFrom" promptText="Enter natural number..." GridPane.rowIndex="1">
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
@@ -163,7 +164,7 @@
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
                   </Label>
-                  <TextField fx:id="inputTo" promptText="225" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                  <TextField fx:id="inputTo" promptText="Enter natural number..." GridPane.columnIndex="1" GridPane.rowIndex="1">
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
@@ -173,7 +174,7 @@
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
                   </Label>
-                  <TextField fx:id="inputStep" layoutX="265.0" layoutY="243.0" promptText="15" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                  <TextField fx:id="inputStep" layoutX="265.0" layoutY="243.0" promptText="Enter natural number..." GridPane.columnIndex="2" GridPane.rowIndex="1">
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
@@ -182,10 +183,36 @@
             </GridPane>
             <Separator prefWidth="200.0">
                <VBox.margin>
-                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                  <Insets bottom="5.0" top="5.0" />
+               </VBox.margin>
+            </Separator>
+            <HBox fillHeight="false" prefHeight="30.0" prefWidth="200.0">
+               <children>
+                  <Label alignment="CENTER" contentDisplay="CENTER" text="Path to server application" textAlignment="CENTER">
+                     <font>
+                        <Font name="Ubuntu" size="18.0" />
+                     </font>
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                  </Label>
+                  <TextField fx:id="inputPathToServerExec" editable="false" promptText="specify absolute or relative path..." text="./netbench-server.sh" HBox.hgrow="ALWAYS">
+                     <HBox.margin>
+                        <Insets left="10.0" right="20.0" />
+                     </HBox.margin>
+                  </TextField>
+                  <Button fx:id="buttonPathToServerExec" mnemonicParsing="false" text="Browse..." />
+               </children>
+            </HBox>
+            <Separator prefWidth="200.0">
+               <VBox.margin>
+                  <Insets bottom="5.0" top="5.0" />
                </VBox.margin>
             </Separator>
          </children>
+         <padding>
+            <Insets left="5.0" right="5.0" />
+         </padding>
       </VBox>
    </center>
    <bottom>

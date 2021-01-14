@@ -40,6 +40,6 @@ shadowJar.apply {
         put("Implementation-Title", "Jvm Netbench Student Project")
         put("Author", "Kry127")
         put("Version", archiveVersion)
-        put("Main-Class", "ru.itmo.kry127.App")
+        put("Main-Class", "ru.spb.kry127.netbench.server.MainKt")
     }
 }

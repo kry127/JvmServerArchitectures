@@ -28,7 +28,7 @@ dependencies {
     // Use the Kotlin JUnit integration.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
 
-    implementation("commons-cli:commons-cli:1.5-SNAPSHOT")
+    implementation("commons-io:commons-io:2.8.0")
     implementation("com.google.protobuf:protobuf-java:$protobufVersion")
     implementation(project(":protoMessages"))
 
@@ -45,6 +45,6 @@ shadowJar.apply {
         put("Implementation-Title", "Jvm Netbench Student Project")
         put("Author", "Kry127")
         put("Version", archiveVersion)
-        put("Main-Class", "ru.itmo.kry127.App")
+        put("Main-Class", "ru.spb.kry127.netbench.client.gui.MainKt")
     }
 }

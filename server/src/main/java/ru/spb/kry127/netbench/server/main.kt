@@ -56,7 +56,7 @@ fun main(args : Array<String>) {
     } catch (e: ParseException) {
         println(e.message ?: "")
         val formatter = HelpFormatter()
-        formatter.printHelp("netbench-jvm", options)
+        formatter.printHelp("netbench-server", options)
         System.exit(1)
     }
 }

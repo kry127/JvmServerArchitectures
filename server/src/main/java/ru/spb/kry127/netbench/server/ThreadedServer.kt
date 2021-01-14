@@ -14,7 +14,9 @@ import kotlin.system.measureTimeMillis
 class ThreadedServer(private val port : Int, workersCount : Int) : Server {
 
     // thread pool for sorting arrays
-    val sortingThreadPool = Executors.newFixedThreadPool(workersCount)
+    val sortingThreadPool = Executors.newFixedThreadPool(workersCount) {
+        Thread(it).apply { isDaemon = true }
+    }
 
     override fun start() {
         val serverSocket = ServerSocket(port, PropLoader.serverBacklogAmount)
@@ -22,7 +24,9 @@ class ThreadedServer(private val port : Int, workersCount : Int) : Server {
             val clientSocket = serverSocket.accept()
             thread {
                 // single thread pool for responses
-                val responseSingleThreadExecutor = Executors.newSingleThreadExecutor()
+                val responseSingleThreadExecutor = Executors.newSingleThreadExecutor() {
+                    Thread(it).apply { isDaemon = true }
+                }
                 try {
                     // communicate with client in separate thread
                     communicateWithClient(clientSocket, responseSingleThreadExecutor)

@@ -212,7 +212,7 @@ class StartupParametersController: Initializable {
             if (rangeByM && rangeByN || rangeByM && rangeByDelta || rangeByN && rangeByDelta) {
                 error ("Multiple range axis detected")
             }
-            var rangeBy = when {
+            val rangeBy = when {
                 rangeByM     -> RangeBy.M
                 rangeByN     -> RangeBy.N
                 rangeByDelta -> RangeBy.DELTA
@@ -270,7 +270,7 @@ class StartupParametersController: Initializable {
                         controller.connectToServerAndProcessData(taskDescription)
                     } finally {
                         // do not forget to destroy server process if it is alive
-                        process.destroy()
+                        process.toHandle().destroy()
                     }
                 }
             }

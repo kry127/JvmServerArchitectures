@@ -26,7 +26,7 @@
          <children>
             <LineChart fx:id="lineChartSortingTime" title="Sorting time" GridPane.columnIndex="1">
               <xAxis>
-                <CategoryAxis side="BOTTOM" />
+                <NumberAxis side="BOTTOM" />
               </xAxis>
               <yAxis>
                 <NumberAxis side="LEFT" />
@@ -34,7 +34,7 @@
             </LineChart>
             <LineChart fx:id="lineChartClientDelay" title="Client delay" GridPane.rowIndex="1">
               <xAxis>
-                <CategoryAxis side="BOTTOM" />
+                <NumberAxis side="BOTTOM" />
               </xAxis>
               <yAxis>
                 <NumberAxis side="LEFT" />
@@ -42,7 +42,7 @@
             </LineChart>
             <LineChart fx:id="lineChartServerDelay" title="Server delay" GridPane.columnIndex="1" GridPane.rowIndex="1">
               <xAxis>
-                <CategoryAxis side="BOTTOM" />
+                <NumberAxis side="BOTTOM" />
               </xAxis>
               <yAxis>
                 <NumberAxis side="LEFT" />

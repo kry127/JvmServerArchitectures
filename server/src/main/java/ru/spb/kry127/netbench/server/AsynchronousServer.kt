@@ -15,7 +15,9 @@ import kotlin.system.measureTimeMillis
 class AsynchronousServer(private val port : Int, workersCount : Int) : Server {
 
     // thread pool for sorting arrays
-    private val sortingThreadPool = Executors.newFixedThreadPool(workersCount)
+    private val sortingThreadPool = Executors.newFixedThreadPool(workersCount) {
+        Thread(it).apply { isDaemon = true }
+    }
 
     // unique ID generator for clients
     private val uniqueIdGen = AtomicLong()
@@ -26,7 +28,9 @@ class AsynchronousServer(private val port : Int, workersCount : Int) : Server {
     private val completionHandler = ReadSizeHandler()
 
     override fun start() {
-        val group = AsynchronousChannelGroup.withThreadPool( Executors.newSingleThreadExecutor())
+        val group = AsynchronousChannelGroup.withThreadPool( Executors.newSingleThreadExecutor() {
+            Thread(it).apply { isDaemon = true }
+        })
         val asyncServerSocket = AsynchronousServerSocketChannel.open(group).bind(InetSocketAddress(port))
         // to preserve same pattern, keep this thread busy with accepting new clients
         while (true) {

@@ -93,7 +93,6 @@ class ResultController: Initializable {
 
         // computation ended, work with GUI
         runLater {
-
             val sortingTimeSeries = XYChart.Series<Int, Long>()
             val serverProcessingTimeSeries = XYChart.Series<Int, Long>()
             val clientProcessingTimeSeries = XYChart.Series<Int, Long>()
@@ -103,8 +102,8 @@ class ResultController: Initializable {
             clientProcessingTimeSeries.data.addAll(clientProcessingTime.map { XYChart.Data(it.first, it.second) })
 
             lineChartSortingTime?.data?.add(sortingTimeSeries)
-            lineChartSortingTime?.data?.add(serverProcessingTimeSeries)
-            lineChartSortingTime?.data?.add(clientProcessingTimeSeries)
+            lineChartServerDelay?.data?.add(serverProcessingTimeSeries)
+            lineChartClientDelay?.data?.add(clientProcessingTimeSeries)
 
             textAreaParameters?.apply {
                 val sb = StringBuilder()

@@ -20,7 +20,9 @@ import kotlin.system.measureTimeMillis
 class NonblockingServer(private val port: Int, workersCount: Int) : Server {
 
     // thread pool for sorting arrays
-    private val sortingThreadPool = Executors.newFixedThreadPool(workersCount)
+    private val sortingThreadPool = Executors.newFixedThreadPool(workersCount) {
+        Thread(it).apply { isDaemon = true }
+    }
 
     // unique ID generator for clients
     private val uniqueIdGen = AtomicLong()

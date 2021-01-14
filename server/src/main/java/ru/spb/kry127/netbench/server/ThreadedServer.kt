@@ -45,11 +45,13 @@ class ThreadedServer(private val port : Int, workersCount : Int) : Server {
             if (byteArray.size != 4) {
                 error("Client sent invalid message size")
             }
-            val inputSize = ByteBuffer.wrap(byteArray).getInt() // actually, return parameter (size of msg) is not used in threaded version of server
+            val inputSize = ByteBuffer.wrap(byteArray).getInt()
+            val inputMsgBuf = ByteBuffer.wrap(inputStream.readNBytes(inputSize))
+
 
             // receive task for array sorting from client
             // https://developers.google.com/protocol-buffers/docs/reference/java/com/google/protobuf/Parser.html#parseDelimitedFrom-java.io.InputStream-
-            val reqMessage = ArraySorter.SortArray.parseDelimitedFrom(inputStream)
+            val reqMessage = ArraySorter.SortArray.parseFrom(inputMsgBuf)
                 ?: break // the tasks for sorting has been ended if null has been returned (see link above)
 
             // register time of starting processing the client -- starts when task has been received from client (here)
@@ -75,8 +77,9 @@ class ThreadedServer(private val port : Int, workersCount : Int) : Server {
                     // embed metrics, build message and send it to client
                     val protoMsg = rspMessageBuilder.setClientProcessingTime(endOfTheProcessing - startOfTheProcessing)
                         .build()
-                    outputStream.write(ByteBuffer.allocate(4).putInt(protoMsg.serializedSize).array())
-                    protoMsg.writeTo(outputStream)
+                    val bytes = protoMsg.toByteArray()
+                    outputStream.write(ByteBuffer.allocate(4).putInt(bytes.size).array())
+                    outputStream.write(bytes)
                 }
             }
         }

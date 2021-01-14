@@ -35,5 +35,5 @@ object PropLoader {
     val connectionRetryDelayMs = 500L // in milliseconds
     val maximumConnectionRetries = 200
 
-    val debug = true
+    val debug = false
 }

@@ -101,6 +101,12 @@ class StartupParametersController: Initializable {
         if (id == -1) return null
 
         val argvKeys = dropdownArchArgvKeys[id]
+
+        val address = InetSocketAddress(argvKeys.portKey)
+        if (PropLoader.debug) {
+            return address // for debug purposes
+        }
+
         // launch external app
         var execPath = resolveExecPath() ?: return null
 
@@ -111,10 +117,6 @@ class StartupParametersController: Initializable {
         )
         val process = processPrep.start()
 
-        val address = InetSocketAddress(argvKeys.portKey)
-        if (PropLoader.debug) {
-            return address // for debug purposes
-        }
         var retries = 0
         while (process.isAlive) {
             try {
@@ -198,6 +200,7 @@ class StartupParametersController: Initializable {
                 val measure = measureStatistics(parameters) {
                     ClientAsyncImpl(connectTo)
                 }
+                print("measure: $measure")
             }
         }
     }

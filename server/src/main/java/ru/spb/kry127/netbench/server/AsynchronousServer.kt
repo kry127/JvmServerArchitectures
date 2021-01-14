@@ -93,6 +93,7 @@ class AsynchronousServer(private val port : Int, workersCount : Int) : Server {
                         val mergeBuffer = ByteBuffer.allocate(szBuf.limit() + rspBuf.size)
                         mergeBuffer.put(szBuf)
                         mergeBuffer.put(rspBuf)
+                        mergeBuffer.flip()
 
                         // set message to write to client
                         clientBundle.state = ClientState.SENDING

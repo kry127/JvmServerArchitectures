@@ -218,16 +218,16 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
             val rspBuf = rspMessage.toByteArray()
 
             // make buffer with size of passing message
-            val szBuf = ByteBuffer.allocate(4).putInt(rspBuf.size)
 
             // concat to single buffer
-            val mergeBuffer = ByteBuffer.allocate(szBuf.limit() + rspBuf.size)
-            mergeBuffer.put(szBuf)
+            val mergeBuffer = ByteBuffer.allocate(4 + rspBuf.size)
+            mergeBuffer.putInt(rspBuf.size)
             mergeBuffer.put(rspBuf)
+            mergeBuffer.flip()
 
             // set message to write to client
             clientBundle.state = ClientState.SENDING
-            clientBundle.msgBuf = ByteBuffer.wrap(rspMessage.toByteArray()) // no need to flip: https://www.mindprod.com/jgloss/bytebuffer.html#SAMPLECODE
+            clientBundle.msgBuf = mergeBuffer // no need to flip: https://www.mindprod.com/jgloss/bytebuffer.html#SAMPLECODE
             // register write selector
             registerSelector(
                 writeSelector,

@@ -101,6 +101,7 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
                     attachment.channel.read(attachment.buf, attachment, AsyncHandler)
                 }
                 ClientState.RECEIVING_SIZE -> {
+                    attachment.buf.flip()
                     val sz = attachment.buf.getInt()
                     attachment.msgSize = sz
                     attachment.buf = ByteBuffer.allocate(sz)
@@ -108,6 +109,7 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
                     attachment.channel.read(attachment.buf, attachment, AsyncHandler)
                 }
                 ClientState.RECEIVING_MSG -> {
+                    attachment.buf.flip()
                     val rsp = ArraySorter.SortArrayRsp.parseFrom(attachment.buf)
                     val meanResult = MeanStatistics(
                         rsp.requestProcessingTime,

@@ -4,19 +4,19 @@ import javafx.fxml.FXML;
 import javafx.scene.control.ChoiceBox
 
 import javafx.event.EventHandler
+import javafx.fxml.FXMLLoader
 import javafx.fxml.Initializable
+import javafx.scene.Parent
 import javafx.scene.control.Button
 import javafx.scene.control.RadioButton
 import javafx.scene.control.TextField
-import ru.spb.kry127.netbench.client.InputDataPoint
-import ru.spb.kry127.netbench.client.measureStatistics
 import ru.spb.kry127.netbench.client.net.ClientAsyncImpl
 import java.lang.NumberFormatException
 import java.net.InetSocketAddress
 import java.net.URL
 import java.util.*
 import javafx.stage.FileChooser
-import ru.spb.kry127.netbench.client.PropLoader
+import javafx.stage.Stage
 import ru.spb.kry127.netbench.client.PropLoader.connectionRetryDelayMs
 import ru.spb.kry127.netbench.client.PropLoader.dropdownArchArgvKeys
 import ru.spb.kry127.netbench.client.PropLoader.dropdownArchOptions
@@ -25,6 +25,9 @@ import ru.spb.kry127.netbench.client.PropLoader.maximumConnectionRetries
 import java.net.Socket
 import java.nio.file.Path
 import java.nio.file.Paths
+import javafx.scene.Scene
+import ru.spb.kry127.netbench.client.*
+import kotlin.concurrent.thread
 
 
 class StartupParametersController: Initializable {
@@ -95,9 +98,7 @@ class StartupParametersController: Initializable {
         }
     }
 
-    var process : Process? = null
-    private fun launchServerArchitecture() : InetSocketAddress? {
-        process = null
+    private fun launchServerArchitecture() : Pair<Process, InetSocketAddress>? {
         val arch = dropdownArch?.value
         val id = dropdownArchOptions.indexOf(arch)
         if (id == -1) return null
@@ -105,19 +106,17 @@ class StartupParametersController: Initializable {
         val argvKeys = dropdownArchArgvKeys[id]
 
         val address = InetSocketAddress(argvKeys.portKey)
-        if (PropLoader.doNotSpawnOwnServer) {
-            return address // for debug purposes
-        }
 
         // launch external app
         var execPath = resolveExecPath() ?: return null
 
-        val processPrep = ProcessBuilder(execPath.toString(),
+        val processPrep = ProcessBuilder(
+            execPath.toString(),
             "--arch", argvKeys.archKey,
             "--port", argvKeys.portKey.toString(),
             "--workers", argvKeys.workersKey.toString(),
         )
-        process = processPrep.start()
+        val process = processPrep.start()
 
         var retries = 0
         while (process?.isAlive == true) {
@@ -127,7 +126,7 @@ class StartupParametersController: Initializable {
                 }
                 // check that server is functioning
                 Socket(address.hostString, address.port).use { }
-                return address // success
+                return process to address // success
             } catch (thr : Throwable) { }
 
             retries++
@@ -150,15 +149,23 @@ class StartupParametersController: Initializable {
         dropdownArch?.setItems(dropdownArchOptions)
         dropdownArchOptions.getOrNull(0).let { dropdownArch?.setValue(it) }
 
+        // describe all integers fields and their restriction classes
+        val intFields = listOf(inputX, inputN, inputM, inputDelta, inputFrom, inputTo, inputStep)
+        val intFieldPositive = listOf(inputX, inputM)
+        val intFieldNonNegative = listOf(inputN, inputDelta)
+        val intFieldNonZero = listOf(inputStep)
+
         // make all integer input box red on invalid input
-        val zeroTolerant = listOf(inputN, inputDelta, inputFrom, inputTo)
-        listOf(inputX, inputN, inputM, inputDelta, inputFrom, inputTo, inputStep).map {
+        intFields.map {
             textField ->
             textField?.onKeyTyped = EventHandler {
+                if (textField == null) return@EventHandler // if there is no component, nothing to do at all :)
                 try {
-                    val x = textField?.getInt()
-                    if (x == null || x <= 0 && !(textField in zeroTolerant)) {
-                        textField?.setError()
+                    val x = textField.getInt()
+                    if (textField in intFieldPositive && x <= 0
+                        || textField in intFieldNonNegative && x < 0
+                        || textField in intFieldNonZero && x == 0) {
+                        textField.setError()
                     }
                 } catch (nfe : NumberFormatException) { }
             }
@@ -195,20 +202,80 @@ class StartupParametersController: Initializable {
         inputPathToServerExec?.onKeyTyped = EventHandler { resolveExecPath() }
 
         buttonLaunch?.onMouseClicked = EventHandler {
-            val connectTo = launchServerArchitecture() // check that server is alive and get credentials
-            val parameters = InputDataPoint(3, 3, 3, 3) // TODO loop through parameters
+            val (process, connectTo) = launchServerArchitecture()  // check that server is alive and get credentials
+                ?: return@EventHandler
 
-            if (connectTo != null) {
-                val measure = measureStatistics(parameters) {
-                    ClientAsyncImpl(connectTo)
+            // create range description
+            val rangeByM = radioM?.isSelected ?: false
+            val rangeByN = radioN?.isSelected ?: false
+            val rangeByDelta = radioDelta?.isSelected ?: false
+            if (rangeByM && rangeByN || rangeByM && rangeByDelta || rangeByN && rangeByDelta) {
+                error ("Multiple range axis detected")
+            }
+            var rangeBy = when {
+                rangeByM     -> RangeBy.M
+                rangeByN     -> RangeBy.N
+                rangeByDelta -> RangeBy.DELTA
+                else         -> error ("You should specify at least one ranging parameter")
+            }
+
+            // this big 'when' purpose is not to trigger unnecessary checks, red coloring and exception throws
+            // if GUI component is missing, fall with NPE
+            val inputDataPoint = when (rangeBy) {
+                RangeBy.X -> InputDataPoint(
+                    1,
+                    inputN!!.getInt(),
+                    inputM!!.getInt(),
+                    inputDelta!!.getInt().toLong())
+                RangeBy.N -> InputDataPoint(
+                    inputX!!.getInt(),
+                    0,
+                    inputM!!.getInt(),
+                    inputDelta!!.getInt().toLong())
+                RangeBy.M -> InputDataPoint(
+                    inputX!!.getInt(),
+                    inputN!!.getInt(),
+                    1,
+                    inputDelta!!.getInt().toLong())
+
+                RangeBy.DELTA -> InputDataPoint(
+                    inputX!!.getInt(),
+                    inputN!!.getInt(),
+                    inputM!!.getInt(),
+                    0L)
+            }
+
+            val rangedDataPoint = RangedDataPoint(inputDataPoint, rangeBy,
+                inputFrom!!.getInt(), inputTo!!.getInt(), inputStep!!.getInt())
+
+            // when rangedDataPoint has been created, we can make task description
+            // with such data: server process handle, server connection info and ranged point data
+            val taskDescription = ConnectionAndMeasurementDescription(process, connectTo, rangedDataPoint)
+
+            // replace with result window
+            val fxmlLoader = FXMLLoader()
+            val root = fxmlLoader.load<Parent>(javaClass.getResourceAsStream("show_results.fxml"))
+            val controller = fxmlLoader.getController<ResultController>()
+
+            val stage = buttonLaunch?.scene?.window as Stage
+            val scene = Scene(root)
+            stage.scene = scene
+            stage.hide()
+
+            stage.onShown = EventHandler {
+                thread {
+                    // do not launch this code in UI thread, we should close process definitely
+                    try {
+                        // send task description in the controller
+                        controller.connectToServerAndProcessData(taskDescription)
+                    } finally {
+                        // do not forget to destroy server process if it is alive
+                        process.destroy()
+                    }
                 }
-                println("measure: $measure")
             }
+            stage.show()
 
-            // do not forget to destroy server process
-            if (process?.isAlive == true) {
-                process?.destroy()
-            }
         }
     }
 }

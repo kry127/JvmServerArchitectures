@@ -80,7 +80,7 @@
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
                   </Label>
-                  <TextField fx:id="inputN" disable="true" promptText="Enter natural number..." GridPane.columnIndex="1" GridPane.rowIndex="2">
+                  <TextField fx:id="inputN" disable="true" promptText="Enter nonnegative number..." GridPane.columnIndex="1" GridPane.rowIndex="2">
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
@@ -149,7 +149,7 @@
                   <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                </rowConstraints>
                <children>
-                  <Label text="from:" GridPane.halignment="LEFT">
+                  <Label text="from" GridPane.halignment="LEFT">
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
@@ -159,7 +159,7 @@
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
                   </TextField>
-                  <Label text="to:" GridPane.columnIndex="1" GridPane.halignment="LEFT">
+                  <Label text="to" GridPane.columnIndex="1" GridPane.halignment="LEFT">
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
@@ -169,7 +169,7 @@
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>
                   </TextField>
-                  <Label layoutX="89.0" layoutY="248.0" text="(positive!) step:" GridPane.columnIndex="2" GridPane.halignment="LEFT">
+                  <Label layoutX="89.0" layoutY="248.0" text="step (nonzero)" GridPane.columnIndex="2" GridPane.halignment="LEFT">
                      <GridPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                      </GridPane.margin>

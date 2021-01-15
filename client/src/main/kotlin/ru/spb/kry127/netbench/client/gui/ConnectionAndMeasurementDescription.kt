@@ -15,5 +15,6 @@ import java.net.InetSocketAddress
 data class ConnectionAndMeasurementDescription(
     val process: Process,
     val connectTo: InetSocketAddress,
-    val rangedDataPoint: RangedDataPoint
+    val rangedDataPoint: RangedDataPoint,
+    val archDescription: String
 )

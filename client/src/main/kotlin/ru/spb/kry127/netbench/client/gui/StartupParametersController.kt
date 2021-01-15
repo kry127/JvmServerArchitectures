@@ -98,8 +98,8 @@ class StartupParametersController: Initializable {
         }
     }
 
-    private fun launchServerArchitecture() : Pair<Process, InetSocketAddress>? {
-        val arch = dropdownArch?.value
+    private fun launchServerArchitecture() : Triple<Process, InetSocketAddress, String>? {
+        val arch = dropdownArch?.value ?: dropdownArchArgvKeys.first().archKey
         val id = dropdownArchOptions.indexOf(arch)
         if (id == -1) return null
 
@@ -128,7 +128,7 @@ class StartupParametersController: Initializable {
                 }
                 // check that server is functioning
                 Socket(address.hostString, address.port).use { }
-                return process to address // success
+                return Triple(process, address, arch) // success
             } catch (thr : Throwable) { }
 
             retries++
@@ -204,7 +204,7 @@ class StartupParametersController: Initializable {
         inputPathToServerExec?.onKeyTyped = EventHandler { resolveExecPath() }
 
         buttonLaunch?.onMouseClicked = EventHandler {
-            val (process, connectTo) = launchServerArchitecture()  // check that server is alive and get credentials
+            val (process, connectTo, arch) = launchServerArchitecture()  // check that server is alive and get credentials
                 ?: return@EventHandler
 
             // create range description
@@ -252,7 +252,7 @@ class StartupParametersController: Initializable {
 
             // when rangedDataPoint has been created, we can make task description
             // with such data: server process handle, server connection info and ranged point data
-            val taskDescription = ConnectionAndMeasurementDescription(process, connectTo, rangedDataPoint)
+            val taskDescription = ConnectionAndMeasurementDescription(process, connectTo, rangedDataPoint, arch)
 
             // replace with result window
             val fxmlLoader = FXMLLoader()

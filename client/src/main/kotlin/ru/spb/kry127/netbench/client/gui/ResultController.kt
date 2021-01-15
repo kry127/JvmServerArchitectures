@@ -2,8 +2,11 @@ package ru.spb.kry127.netbench.client.gui
 
 import javafx.application.Platform.runLater
 import javafx.collections.ObservableList
+import javafx.embed.swing.SwingFXUtils
+import javafx.event.EventHandler
 import javafx.fxml.FXML
 import javafx.fxml.Initializable
+import javafx.scene.Node
 import javafx.scene.chart.LineChart
 import javafx.scene.chart.XYChart
 import javafx.scene.control.Button
@@ -15,11 +18,24 @@ import java.util.*
 import javafx.scene.control.Alert.AlertType
 
 import javafx.scene.control.Alert
+import java.io.IOException
 
+import javax.imageio.ImageIO
 
+import javafx.scene.image.WritableImage
+
+import javafx.scene.SnapshotParameters
+import javafx.scene.layout.GridPane
+import javafx.stage.FileChooser
+import ru.spb.kry127.netbench.client.InputDataPoint
+import ru.spb.kry127.netbench.client.MeanStatistics
+import java.io.File
+import java.nio.file.Paths
 
 
 class ResultController: Initializable {
+    @FXML
+    private var gridPaneScreenshot: GridPane? = null
 
     @FXML
     private var buttonSaveImages: Button? = null
@@ -36,8 +52,69 @@ class ResultController: Initializable {
     @FXML
     private var lineChartClientDelay: LineChart<Int, Long>? = null
 
+    var arch : String = "none"
+    val measuredTime = mutableListOf<Pair<InputDataPoint, MeanStatistics>>()
+
+    private fun saveAsPng(node: Node, file: File, ssp: SnapshotParameters = SnapshotParameters()) {
+        val image: WritableImage = node.snapshot(ssp, null)
+        try {
+            ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file)
+        } catch (e: IOException) {
+            Alert(AlertType.ERROR).apply {
+                title = "Save image error"
+                headerText = "Error"
+                contentText = "Couldn't save your file :(.\nReason: ${e.message}"
+                showAndWait()
+            }
+        }
+    }
+
+    private fun saveAsCsv(file: File) {
+        file.printWriter().use { out ->
+            // put header
+            out.println("arch,x,n,m,delta,sorting,server,client")
+            for ((dataPoint, statistic) in measuredTime) {
+                val (x, n, m, delta) = dataPoint
+                val (sorting, server, client) = statistic
+                out.println("$arch,$x,$n,$m,$delta,$sorting,$server,$client")
+            }
+
+        }
+    }
+
     override fun initialize(location: URL?, resources: ResourceBundle?) {
         textAreaParameters?.text = "Initialization completed"
+
+        buttonSaveImages?.onMouseClicked = EventHandler {
+            val button = buttonSaveImages ?: return@EventHandler
+            val screenshotableNode = gridPaneScreenshot ?: return@EventHandler
+
+            val fileChooser = FileChooser()
+            val file = fileChooser.showSaveDialog(button.scene.window)
+            val suffix = ".png"
+            if (file != null) {
+                if(file.absolutePath.endsWith(suffix)) {
+                    saveAsPng(screenshotableNode, file)
+                } else {
+                    saveAsPng(screenshotableNode, Paths.get(file.absolutePath.toString() + suffix).toFile())
+                }
+            }
+        }
+
+        buttonSaveCsv?.onMouseClicked = EventHandler {
+            val button = buttonSaveCsv ?: return@EventHandler
+
+            val fileChooser = FileChooser()
+            val file = fileChooser.showSaveDialog(button.scene.window)
+            val suffix = ".csv"
+            if (file != null) {
+                if(file.absolutePath.endsWith(suffix)) {
+                    saveAsCsv(file)
+                } else {
+                    saveAsCsv(Paths.get(file.absolutePath.toString() + suffix).toFile())
+                }
+            }
+        }
     }
 
     /**
@@ -50,7 +127,8 @@ class ResultController: Initializable {
      */
     internal fun connectToServerAndProcessData(taskDescription: ConnectionAndMeasurementDescription) {
         // destruct data class
-        val (process, connectTo, rangedDataPoint) = taskDescription
+        val (process, connectTo, rangedDataPoint, archDescription) = taskDescription
+        arch = archDescription
         if (!process.isAlive) {
             runLater {
                 Alert(AlertType.ERROR).apply {
@@ -70,6 +148,7 @@ class ResultController: Initializable {
         runLater { textAreaParameters?.apply {
             val sb = StringBuilder()
             sb.appendLine("Performing computations...")
+            sb.appendLine("Architecture: ${arch}")
             sb.appendLine(rangedDataPoint.constDescription())
             text = sb.toString()
         } }
@@ -86,6 +165,9 @@ class ResultController: Initializable {
             val measure = measureStatistics(dataPoint) {
                 ClientAsyncImpl(connectTo)
             }
+
+            measuredTime += dataPoint to measure
+
             sortingTime += key to measure.requestProcessingTime
             serverProcessingTime += key to measure.clientProcessingTime // some nonsense here :)
             clientProcessingTime += key to measure.overallDelay
@@ -108,6 +190,7 @@ class ResultController: Initializable {
             textAreaParameters?.apply {
                 val sb = StringBuilder()
                 sb.appendLine("Computation done!")
+                sb.appendLine("Architecture: ${taskDescription.archDescription}")
                 sb.appendLine(rangedDataPoint.constDescription())
                 text = sb.toString()
             }

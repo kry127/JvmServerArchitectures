@@ -35,7 +35,7 @@ dependencies {
 }
 // https://stackoverflow.com/questions/56510154/how-do-i-add-javafx-to-a-gradle-build-file-using-kotlin-dsl
 javafx {
-    modules("javafx.base", "javafx.graphics", "javafx.controls", "javafx.fxml")
+    modules("javafx.base", "javafx.graphics", "javafx.controls", "javafx.fxml", "javafx.swing")
 }
 
 // make fat jar executable

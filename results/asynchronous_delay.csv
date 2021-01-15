@@ -1,0 +1,10 @@
+arch,x,n,m,delta,sorting,server,client
+Asynchronous,15,1000,3,0,0,1,37
+Asynchronous,15,1000,3,300,2,2,4258
+Asynchronous,15,1000,3,600,2,2,8476
+Asynchronous,15,1000,3,900,2,2,12671
+Asynchronous,15,1000,3,1200,2,3,16878
+Asynchronous,15,1000,3,1500,2,2,21073
+Asynchronous,15,1000,3,1800,2,2,25270
+Asynchronous,15,1000,3,2100,2,2,29473
+Asynchronous,15,1000,3,2400,2,3,33684

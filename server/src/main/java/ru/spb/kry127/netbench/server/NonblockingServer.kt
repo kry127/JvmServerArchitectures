@@ -3,7 +3,6 @@ package ru.spb.kry127.netbench.server
 import com.google.protobuf.InvalidProtocolBufferException
 import ru.spb.kry127.netbench.proto.ArraySorter
 import java.lang.Thread.sleep
-import java.math.BigInteger
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SelectionKey
@@ -68,7 +67,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                         clientBundles.remove(clientId)
                                     }
                                     if (!clientBundle.sizeBuf.hasRemaining()) {
-                                        val size = BigInteger(clientBundle.sizeBuf.array()).toInt()
+                                        val size = clientBundle.sizeBuf.getInt()
                                         clientBundle.state = ClientState.READING
                                         clientBundle.msgBuf = ByteBuffer.allocate(size)
                                         clientBundle.sizeBuf.clear()

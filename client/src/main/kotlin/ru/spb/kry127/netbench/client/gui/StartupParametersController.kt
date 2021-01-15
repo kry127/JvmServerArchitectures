@@ -108,7 +108,7 @@ class StartupParametersController: Initializable {
         val address = InetSocketAddress(argvKeys.portKey)
 
         // launch external app
-        var execPath = resolveExecPath() ?: return null
+        val execPath = resolveExecPath() ?: return null
 
         val processPrep = ProcessBuilder(
             execPath.toString(),
@@ -116,6 +116,8 @@ class StartupParametersController: Initializable {
             "--port", argvKeys.portKey.toString(),
             "--workers", argvKeys.workersKey.toString(),
         )
+        processPrep.redirectOutput(ProcessBuilder.Redirect.INHERIT)
+        processPrep.redirectError(ProcessBuilder.Redirect.INHERIT)
         val process = processPrep.start()
 
         var retries = 0
@@ -263,8 +265,8 @@ class StartupParametersController: Initializable {
             stage.scene = scene
             stage.hide()
 
-            stage.onShown = EventHandler {
-                thread {
+            val calculationThread =
+                thread(start=false, isDaemon=true) {
                     // do not launch this code in UI thread, we should close process definitely
                     try {
                         // send task description in the controller
@@ -274,8 +276,10 @@ class StartupParametersController: Initializable {
                         process.toHandle().destroy()
                     }
                 }
-            }
+
+            stage.onShown = EventHandler { calculationThread.start() }
             stage.onCloseRequest = EventHandler {
+                calculationThread.interrupt()
                 stage.hide()
                 stage.onShown = null
                 stage.onCloseRequest = null

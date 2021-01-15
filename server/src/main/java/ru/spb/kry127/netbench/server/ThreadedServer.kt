@@ -47,7 +47,8 @@ class ThreadedServer(private val port : Int, workersCount : Int) : Server {
 
             val byteArray = inputStream.readNBytes(4)
             if (byteArray.size != 4) {
-                error("Client sent invalid message size")
+                println("Client sent invalid message size, terminate connection")
+                break
             }
             val inputSize = ByteBuffer.wrap(byteArray).getInt()
             val inputMsgBuf = ByteBuffer.wrap(inputStream.readNBytes(inputSize))

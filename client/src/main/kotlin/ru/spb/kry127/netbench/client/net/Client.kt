@@ -73,6 +73,9 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
         var startProcessingTime: Long = 0,
         val resultList: MutableList<MeanStatistics> = mutableListOf(),
 
+        // for validation
+        var toSort: List<Int> = listOf()
+
         )
 
     object AsyncHandler : CompletionHandler<Int, AsyncHandlerAttachment> {
@@ -82,6 +85,7 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
                     attachment.startProcessingTime = System.currentTimeMillis()
                     // we'd like to send some array
                     val toSort = IntGenerator.generateUniformArray(attachment.inputDataPoint.n)
+                    attachment.toSort = toSort // TODO save for validation
                     val msgBytes = ArraySorter.SortArray.newBuilder().addAllArray(toSort).build().toByteArray()
                     val bigBuffer = ByteBuffer.allocate(4 + msgBytes.size)
                     bigBuffer.putInt(msgBytes.size)
@@ -103,12 +107,18 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
                 ClientState.RECEIVING_SIZE -> {
                     attachment.buf.flip()
                     val sz = attachment.buf.getInt()
+                    println("toSort.size=${attachment.toSort.size}, sz=$sz")
                     attachment.msgSize = sz
                     attachment.buf = ByteBuffer.allocate(sz)
                     attachment.state = ClientState.RECEIVING_MSG
                     attachment.channel.read(attachment.buf, attachment, AsyncHandler)
                 }
                 ClientState.RECEIVING_MSG -> {
+                    if (attachment.buf.position() != attachment.buf.capacity()) {
+                        // continue reading
+                        attachment.channel.read(attachment.buf, attachment, AsyncHandler)
+                        return
+                    }
                     attachment.buf.flip()
                     val rsp = ArraySorter.SortArrayRsp.parseFrom(attachment.buf)
                     val meanResult = MeanStatistics(
@@ -116,6 +126,17 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
                         rsp.clientProcessingTime,
                         System.currentTimeMillis() - attachment.startProcessingTime
                     )
+
+                    // make some validation
+                    if(attachment.toSort.size != rsp.sortedArrayList.size) {
+                        error("Size of sorted list has changed!")
+                    }
+                    for((v1, v2) in attachment.toSort.sorted().zip(rsp.sortedArrayList)) {
+                        if (v1 != v2) {
+                            error("Sorted arrays not equal")
+                        }
+                    }
+
                     attachment.resultList.add(meanResult)
                     attachment.timeToLive--
                     if (attachment.timeToLive <= 0) {

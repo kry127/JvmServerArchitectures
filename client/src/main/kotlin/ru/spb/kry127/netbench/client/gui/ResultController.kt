@@ -111,14 +111,6 @@ class ResultController: Initializable {
                 sb.appendLine(rangedDataPoint.constDescription())
                 text = sb.toString()
             }
-
-            Alert(AlertType.INFORMATION).apply {
-                title = "Computation results"
-                headerText = "Computation results are ready!"
-                contentText = "See content..."
-
-                showAndWait()
-            }
         }
     }
 

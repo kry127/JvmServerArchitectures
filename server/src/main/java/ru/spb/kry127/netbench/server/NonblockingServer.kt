@@ -220,6 +220,9 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
             val rspBuf = rspMessage.toByteArray()
 
             // make buffer with size of passing message
+            if (rspBuf.size > 100000000) {
+                println("Alert! Big buffer incoming!")
+            }
 
             // concat to single buffer
             val mergeBuffer = ByteBuffer.allocate(4 + rspBuf.size)

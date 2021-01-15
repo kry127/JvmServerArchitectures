@@ -108,6 +108,9 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
                     attachment.buf.flip()
                     val sz = attachment.buf.getInt()
                     println("toSort.size=${attachment.toSort.size}, sz=$sz")
+                    if (sz > 100000000) {
+                        print(".")
+                    }
                     attachment.msgSize = sz
                     attachment.buf = ByteBuffer.allocate(sz)
                     attachment.state = ClientState.RECEIVING_MSG

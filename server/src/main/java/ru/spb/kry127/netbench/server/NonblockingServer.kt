@@ -54,7 +54,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                     while (iter.hasNext()) {
                         val key = iter.next()
 
-                        if (key.isReadable) {
+                        if (key.isValid && key.isReadable) {
                             val clientId = key.attachment() as Long // get clientId from attachment
                             val clientBundle = clientBundles[clientId] ?: error("Illegal client state")
                             val channel = key.channel() as SocketChannel // get channel
@@ -65,7 +65,6 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                         // the communication is over
                                         clientBundles[clientId]?.finishReading = true
                                         key.cancel()
-//                                        clientBundles.remove(clientId)
                                     }
                                     if (!clientBundle.sizeBuf.hasRemaining()) {
                                         clientBundle.sizeBuf.flip()
@@ -73,19 +72,21 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                         clientBundle.state = ClientState.READING
                                         clientBundle.msgBuf = ByteBuffer.allocate(size)
                                         clientBundle.sizeBuf.clear()
+
+                                        if (size == 0) {
+                                            // now or never...
+                                            val sortArrayTask = ArraySorter.SortArray.parseFrom(clientBundle.msgBuf)
+                                            processTask(clientId, sortArrayTask)
+                                        }
                                     }
                                 }
                                 ClientState.READING -> {
-                                    channel.read(clientBundle.msgBuf)
+                                    val code = channel.read(clientBundle.msgBuf)
                                     if (!clientBundle.msgBuf.hasRemaining()) {
                                         clientBundle.msgBuf.flip()
                                         // message is ready to parse and send for computation
                                         try {
                                             val sortArrayTask = ArraySorter.SortArray.parseFrom(clientBundle.msgBuf)
-
-//                                            key.interestOps(0)  // cancel
-
-                                            // process task
                                             processTask(clientId, sortArrayTask)
                                         } catch (ex : InvalidProtocolBufferException) {
                                             // invalid message found
@@ -98,8 +99,6 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                 else -> { } // do nothing, wait for good condition // error ("Wrong client state")
                             }
                             iter.remove() // remove processed key from the set
-                        } else {
-                            error ("Illegal interest key in readSelector")
                         }
                     }
                 } catch (ex : InterruptedException) { }
@@ -121,7 +120,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                     while (iter.hasNext()) {
                         val key = iter.next()
 
-                        if (key.isWritable) {
+                        if (key.isValid && key.isWritable) {
                             val clientId = key.attachment() as Long
                             val clientBundle = clientBundles[clientId] ?: error("Illegal client state")
                             val channel = key.channel() as SocketChannel // get channel
@@ -129,9 +128,6 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                 ClientState.SENDING -> {
                                     channel.write(clientBundle.msgBuf)
                                     if (!clientBundle.msgBuf.hasRemaining()) {
-
-//                                        key.interestOps(0) // cancel
-
                                         // register read selector once again
                                         clientBundle.state = ClientState.READY
                                         registerSelector(
@@ -146,8 +142,6 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                 else -> { } // do nothing, wait for good condition // error ("Wrong client state")
                             }
                             iter.remove() // remove processed key from the set
-                        } else {
-                            error ("Illegal interest key in writeSelector")
                         }
                     }
                 } catch (ex : InterruptedException) { }
@@ -221,7 +215,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
 
             // make buffer with size of passing message
             if (rspBuf.size > 100000000) {
-                println("Alert! Big buffer incoming!")
+                println("[${clientId}] Alert! Big buffer incoming!")
             }
 
             // concat to single buffer

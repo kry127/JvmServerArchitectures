@@ -162,15 +162,28 @@ class ResultController: Initializable {
                 text += "${rangedDataPoint.iterLabel()}=$key\n"
             } }
 
-            val measure = measureStatistics(dataPoint) {
-                ClientAsyncImpl(connectTo)
+            try {
+                val measure = measureStatistics(dataPoint) {
+                    ClientAsyncImpl(connectTo)
+                }
+
+                measuredTime += dataPoint to measure
+
+                sortingTime += key to measure.requestProcessingTime
+                serverProcessingTime += key to measure.clientProcessingTime // some nonsense here :)
+                clientProcessingTime += key to measure.overallDelay
+            } catch (e: Throwable) {
+                runLater {
+                    Alert(AlertType.ERROR).apply {
+                        title = "Network error"
+                        headerText = "Error"
+                        contentText = e.message
+
+                        showAndWait()
+                    }
+                }
             }
 
-            measuredTime += dataPoint to measure
-
-            sortingTime += key to measure.requestProcessingTime
-            serverProcessingTime += key to measure.clientProcessingTime // some nonsense here :)
-            clientProcessingTime += key to measure.overallDelay
         }
 
         // computation ended, work with GUI

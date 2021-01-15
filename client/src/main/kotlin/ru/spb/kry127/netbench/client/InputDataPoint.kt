@@ -54,7 +54,7 @@ data class RangedDataPoint(
     fun getDatapoints() : Iterator<Pair<Int, InputDataPoint>>
             = object : Iterator<Pair<Int, InputDataPoint>> {
         var i = from
-        override fun hasNext() = i <= to
+        override fun hasNext() = (i <= to) && (step > 0) || (i >= to) && (step < 0)
         override fun next(): Pair<Int, InputDataPoint> {
             val (x, n, m, delta) = dataPoint
             val ret = i to when(rangeBy) {

@@ -273,7 +273,8 @@ class StartupParametersController: Initializable {
                         controller.connectToServerAndProcessData(taskDescription)
                     } finally {
                         // do not forget to destroy server process if it is alive
-                        process.toHandle().destroy()
+                        process.descendants().forEach { it.destroy() }
+                        process.destroy()
                     }
                 }
 

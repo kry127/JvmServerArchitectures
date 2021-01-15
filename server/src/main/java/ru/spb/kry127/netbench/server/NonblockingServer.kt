@@ -63,8 +63,9 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                     val code = channel.read(clientBundle.sizeBuf)
                                     if (code == -1) {
                                         // the communication is over
+                                        clientBundles[clientId]?.finishReading = true
                                         key.cancel()
-                                        clientBundles.remove(clientId)
+//                                        clientBundles.remove(clientId)
                                     }
                                     if (!clientBundle.sizeBuf.hasRemaining()) {
                                         clientBundle.sizeBuf.flip()
@@ -82,8 +83,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                         try {
                                             val sortArrayTask = ArraySorter.SortArray.parseFrom(clientBundle.msgBuf)
 
-                                            // unregister read selector (should be re-registered later)
-                                            key.cancel()
+//                                            key.interestOps(0)  // cancel
 
                                             // process task
                                             processTask(clientId, sortArrayTask)
@@ -95,7 +95,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                         }
                                     }
                                 }
-                                else -> error ("Wrong client state")
+                                else -> { } // do nothing, wait for good condition // error ("Wrong client state")
                             }
                             iter.remove() // remove processed key from the set
                         } else {
@@ -130,8 +130,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                     channel.write(clientBundle.msgBuf)
                                     if (!clientBundle.msgBuf.hasRemaining()) {
 
-                                        // unregister read selector (should be re-registered later)
-                                        key.cancel()
+//                                        key.interestOps(0) // cancel
 
                                         // register read selector once again
                                         clientBundle.state = ClientState.READY
@@ -144,7 +143,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                         )
                                     }
                                 }
-                                else -> error ("Wrong client state")
+                                else -> { } // do nothing, wait for good condition // error ("Wrong client state")
                             }
                             iter.remove() // remove processed key from the set
                         } else {
@@ -231,14 +230,18 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
             // set message to write to client
             clientBundle.state = ClientState.SENDING
             clientBundle.msgBuf = mergeBuffer // no need to flip: https://www.mindprod.com/jgloss/bytebuffer.html#SAMPLECODE
-            // register write selector
-            registerSelector(
-                writeSelector,
-                writingThreadSelector,
-                clientBundle.clientSocket,
-                SelectionKey.OP_WRITE,
-                clientId
-            )
+            if (clientBundle.finishReading) {
+                clientBundles.remove(clientId)
+            } else {
+                // register write selector
+                registerSelector(
+                    writeSelector,
+                    writingThreadSelector,
+                    clientBundle.clientSocket,
+                    SelectionKey.OP_WRITE,
+                    clientId
+                )
+            }
         }
     }
 
@@ -254,5 +257,6 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
         var state: ClientState,
         var msgBuf: ByteBuffer = ByteBuffer.allocate(0), // buffer for incoming and outcoming message, changes depending on state
         val sizeBuf: ByteBuffer = ByteBuffer.allocate(4), // buffer for message size, always presented
+        @Volatile var finishReading: Boolean = false
     )
 }

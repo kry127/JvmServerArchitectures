@@ -23,16 +23,18 @@ class ThreadedServer(private val port : Int, workersCount : Int) : Server {
         while (true) {
             val clientSocket = serverSocket.accept()
             thread {
-                // single thread pool for responses
-                val responseSingleThreadExecutor = Executors.newSingleThreadExecutor() {
-                    Thread(it).apply { isDaemon = true }
-                }
-                try {
-                    // communicate with client in separate thread
-                    communicateWithClient(clientSocket, responseSingleThreadExecutor)
-                } finally {
-                    responseSingleThreadExecutor.shutdownNow()
-                    responseSingleThreadExecutor.awaitTermination(PropLoader.gracefulStopThreadPoolTimeoutSeconds, TimeUnit.SECONDS)
+                clientSocket.use {
+                    // single thread pool for responses
+                    val responseSingleThreadExecutor = Executors.newSingleThreadExecutor() {
+                        Thread(it).apply { isDaemon = true }
+                    }
+                    try {
+                        // communicate with client in separate thread
+                        communicateWithClient(clientSocket, responseSingleThreadExecutor)
+                    } finally {
+                        responseSingleThreadExecutor.shutdown()
+                        responseSingleThreadExecutor.awaitTermination(PropLoader.gracefulStopThreadPoolTimeoutSeconds, TimeUnit.SECONDS)
+                    }
                 }
             }
         }
@@ -46,18 +48,21 @@ class ThreadedServer(private val port : Int, workersCount : Int) : Server {
             // receive size of the message
 
             val byteArray = inputStream.readNBytes(4)
+            val avail = inputStream.available()
             if (byteArray.size != 4) {
-                println("Client sent invalid message size, terminate connection")
-                break
+//                println("Client sent invalid message size: ${byteArray.size}, but available to read: ${avail}, terminate connection")
+                return
             }
             val inputSize = ByteBuffer.wrap(byteArray).getInt()
+
+//            println("Reading message of size: ${inputSize}, available bytes: ${avail}")
             val inputMsgBuf = ByteBuffer.wrap(inputStream.readNBytes(inputSize))
 
 
             // receive task for array sorting from client
             // https://developers.google.com/protocol-buffers/docs/reference/java/com/google/protobuf/Parser.html#parseDelimitedFrom-java.io.InputStream-
             val reqMessage = ArraySorter.SortArray.parseFrom(inputMsgBuf)
-                ?: break // the tasks for sorting has been ended if null has been returned (see link above)
+                ?: return // the tasks for sorting has been ended if null has been returned (see link above)
 
             // register time of starting processing the client -- starts when task has been received from client (here)
             val startOfTheProcessing = System.currentTimeMillis()

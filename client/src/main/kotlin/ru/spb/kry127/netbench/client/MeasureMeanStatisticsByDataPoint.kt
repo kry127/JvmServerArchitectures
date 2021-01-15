@@ -4,6 +4,8 @@ import ru.spb.kry127.netbench.client.net.Client
 import ru.spb.kry127.netbench.client.MeanStatistics.Companion.mean
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
+import kotlin.system.measureTimeMillis
+import kotlin.time.measureTime
 
 
 /**
@@ -14,11 +16,17 @@ import java.util.concurrent.Executors
  * If you need to vary some parameter, do it in some kind of loop
  */
 fun measureStatistics(withParameters: InputDataPoint, clientFactory: (Int) -> Client): MeanStatistics {
-    val executor = Executors.newFixedThreadPool(8)
+    val executor = Executors.newCachedThreadPool() {
+        Thread(it).apply { isDaemon = true }
+    }
     val clientResults = (0 until withParameters.m).map {
         executor.submit(Callable {
+            val begin = System.currentTimeMillis()
             val client = clientFactory(it)
-            client.communicate(withParameters)
+            val statistics = client.communicate(withParameters)
+            // override client time with real value
+            val (sort, server) = statistics
+            MeanStatistics(sort, server, System.currentTimeMillis() - begin)
         })
     }
     return clientResults.map { it.get() }.mean()

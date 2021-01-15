@@ -58,12 +58,12 @@ class AsynchronousServer(private val port : Int, workersCount : Int) : Server {
                 ?: error("Corruption of user metadata: id=$id")
             if (result == -1) {
                 // the communication with client is over
-                println("Client #$id, status: COMMUNICATION_ENDED")
+//                println("Client #$id, status: COMMUNICATION_ENDED")
                 clientBundles.remove(id)
                 return
             }
 
-            println("Client #$id, status: ${clientBundle.state}")
+//            println("Client #$id, status: ${clientBundle.state}")
             when (clientBundle.state) {
                 ClientState.READY -> {
                     clientBundle.state = ClientState.READING_SIZE
@@ -78,7 +78,7 @@ class AsynchronousServer(private val port : Int, workersCount : Int) : Server {
                     clientBundle.clientSocket.read(clientBundle.msgBuf, id, this)
                 }
                 ClientState.READING -> {
-                    if (clientBundle.msgBuf.position() != clientBundle.msgBuf.capacity()) {
+                    if (clientBundle.msgBuf.hasRemaining()) {
                         // continue reading
                         clientBundle.clientSocket.read(clientBundle.msgBuf, id, this)
                         return

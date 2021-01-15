@@ -64,7 +64,6 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                     if (code == -1) {
                                         // the communication is over
                                         clientBundles[clientId]?.finishReading = true
-                                        key.cancel()
                                     }
                                     if (!clientBundle.sizeBuf.hasRemaining()) {
                                         clientBundle.sizeBuf.flip()
@@ -177,7 +176,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
             clientSocket.configureBlocking(false) // set client in nonblocking mode
 
             // create client's state
-            clientBundles[clientId] = ClientBundle(clientSocket, ClientState.READY)
+            clientBundles[clientId] = ClientBundle(clientId, clientSocket, ClientState.READY)
 
             // register selector for read
             registerSelector(readSelector, readingThreadSelector, clientSocket, SelectionKey.OP_READ, clientId)
@@ -225,10 +224,11 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
             mergeBuffer.flip()
 
             // set message to write to client
-            clientBundle.state = ClientState.SENDING
             clientBundle.msgBuf = mergeBuffer // no need to flip: https://www.mindprod.com/jgloss/bytebuffer.html#SAMPLECODE
+            clientBundle.state = ClientState.SENDING
             if (clientBundle.finishReading) {
                 clientBundles.remove(clientId)
+                clientBundle.clientSocket.close()
             } else {
                 // register write selector
                 registerSelector(
@@ -250,10 +250,18 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
 
     private enum class ClientState { READY, READING, PROCESSING, SENDING }
     private class ClientBundle(
+        val clientId: Long,
         val clientSocket: SocketChannel,
-        var state: ClientState,
+        @Volatile private var stateProp: ClientState,
         var msgBuf: ByteBuffer = ByteBuffer.allocate(0), // buffer for incoming and outcoming message, changes depending on state
         val sizeBuf: ByteBuffer = ByteBuffer.allocate(4), // buffer for message size, always presented
         @Volatile var finishReading: Boolean = false
-    )
+    ) {
+        var state : ClientState
+            get() = stateProp
+            set(value) {
+//                println("[$clientId] $stateProp -> $value");
+                stateProp = value
+            }
+    }
 }

@@ -114,7 +114,7 @@ class ClientAsyncImpl(val connectTo: InetSocketAddress) : Client {
                     attachment.channel.read(attachment.buf, attachment, AsyncHandler)
                 }
                 ClientState.RECEIVING_MSG -> {
-                    if (attachment.buf.position() != attachment.buf.capacity()) {
+                    if (attachment.buf.hasRemaining()) {
                         // continue reading
                         attachment.channel.read(attachment.buf, attachment, AsyncHandler)
                         return

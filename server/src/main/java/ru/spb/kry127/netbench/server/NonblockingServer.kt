@@ -67,6 +67,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                         clientBundles.remove(clientId)
                                     }
                                     if (!clientBundle.sizeBuf.hasRemaining()) {
+                                        clientBundle.sizeBuf.flip()
                                         val size = clientBundle.sizeBuf.getInt()
                                         clientBundle.state = ClientState.READING
                                         clientBundle.msgBuf = ByteBuffer.allocate(size)
@@ -76,6 +77,7 @@ class NonblockingServer(private val port: Int, workersCount: Int) : Server {
                                 ClientState.READING -> {
                                     channel.read(clientBundle.msgBuf)
                                     if (!clientBundle.msgBuf.hasRemaining()) {
+                                        clientBundle.msgBuf.flip()
                                         // message is ready to parse and send for computation
                                         try {
                                             val sortArrayTask = ArraySorter.SortArray.parseFrom(clientBundle.msgBuf)

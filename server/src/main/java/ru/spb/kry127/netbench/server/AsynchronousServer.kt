@@ -78,6 +78,11 @@ class AsynchronousServer(private val port : Int, workersCount : Int) : Server {
                     clientBundle.clientSocket.read(clientBundle.msgBuf, id, this)
                 }
                 ClientState.READING -> {
+                    if (clientBundle.msgBuf.position() != clientBundle.msgBuf.capacity()) {
+                        // continue reading
+                        clientBundle.clientSocket.read(clientBundle.msgBuf, id, this)
+                        return
+                    }
                     clientBundle.msgBuf.flip()
                     val sortArrayTask = ArraySorter.SortArray.parseFrom(clientBundle.msgBuf.array())
                     clientBundle.state = ClientState.PROCESSING

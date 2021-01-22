@@ -29,6 +29,14 @@ Where
 * `[param] = array | clients | delay` -- parameter varying: sorting array size / amount of simultaneous clients / delay between queries
 * `[ext] = png | csv` -- result image (graphics) or result
 
+The results has been recombined to following images:
+#### Varying array size
+![Array size graphics]( results/results_recombination/array.png)
+#### Varying clients amount
+![Clients amount graphics]( results/results_recombination/clients.png)
+#### Varying delay
+![Delay graphics]( results/results_recombination/delay.png)
+
 ## Troubleshooting
 
 Sometimes there is a situation when server cannot start because old instances of server are
